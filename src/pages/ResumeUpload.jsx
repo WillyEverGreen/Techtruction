@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
-import { useJobs } from '../context/JobContext.jsx';
-import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useJobs } from "../context/JobContext.jsx";
+import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
 
 const ResumeUpload = () => {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const { user, updateUser } = useAuth();
   const { setResumeData } = useJobs();
@@ -28,7 +28,7 @@ const ResumeUpload = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
@@ -41,20 +41,24 @@ const ResumeUpload = () => {
   };
 
   const handleFile = (selectedFile) => {
-    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const validTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
     const maxSize = 5 * 1024 * 1024; // 5MB
 
     if (!validTypes.includes(selectedFile.type)) {
-      setError('Please upload a PDF or Word document');
+      setError("Please upload a PDF or Word document");
       return;
     }
 
     if (selectedFile.size > maxSize) {
-      setError('File size must be less than 5MB');
+      setError("File size must be less than 5MB");
       return;
     }
 
-    setError('');
+    setError("");
     setFile(selectedFile);
   };
 
@@ -62,46 +66,39 @@ const ResumeUpload = () => {
     if (!file) return;
 
     setUploading(true);
-    setError('');
+    setError("");
 
     try {
-      // Simulate file upload and processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const formData = new FormData();
+      formData.append("resume", file);
 
-      // Simulate extracting text from resume
-      const resumeText = `
-        John Doe
-        Software Developer
-        
-        Experience:
-        - Frontend Developer at TechCorp (2021-2023)
-        - Developed responsive web applications using React, JavaScript, HTML, CSS
-        - Collaborated with cross-functional teams using Git version control
-        - Improved website performance by 30%
-        
-        Skills:
-        JavaScript, React, HTML, CSS, Git, Node.js, Python
-        
-        Education:
-        Bachelor of Science in Computer Science
-        University of Technology (2017-2021)
-      `;
+      const response = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.error) throw new Error(data.error);
 
       setResumeData({
         fileName: file.name,
         fileSize: file.size,
         uploadDate: new Date().toISOString(),
-        text: resumeText
+        file, // store the actual file object for later analysis
+        file_id: data.file_id, // store the file ID from backend
+        file_path: data.file_path, // store the file path from backend
+        skills: data.skills || [],
       });
 
-      updateUser({ 
+      updateUser({
         resumeUploaded: true,
-        resumeFileName: file.name
+        resumeFileName: file.name,
       });
 
-      navigate('/resume-analysis');
+      navigate("/resume-analysis");
     } catch (err) {
-      setError('Failed to upload resume. Please try again.');
+      setError("Failed to upload resume. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -114,19 +111,26 @@ const ResumeUpload = () => {
           <div className="p-4 bg-green-100 rounded-full inline-block mb-6">
             <CheckCircle className="h-12 w-12 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Resume Already Uploaded</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Resume Already Uploaded
+          </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Your resume "{user.resumeFileName}" has been uploaded and is ready for analysis.
+            Your resume "{user.resumeFileName}" has been uploaded and is ready
+            for analysis.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate('/resume-analysis')}
+              onClick={() => navigate("/resume-analysis")}
               className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
             >
               Analyze Resume
             </button>
             <button
-              onClick={() => setFile(null)}
+              onClick={() => {
+                setFile(null);
+                updateUser({ resumeUploaded: false, resumeFileName: null });
+                setResumeData(null);
+              }}
               className="px-6 py-3 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-300 hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
             >
               Upload New Resume
@@ -140,9 +144,12 @@ const ResumeUpload = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Upload Your Resume</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          Upload Your Resume
+        </h1>
         <p className="text-xl text-gray-600">
-          Let our AI analyze your resume and provide personalized recommendations
+          Let our AI analyze your resume and provide personalized
+          recommendations
         </p>
       </div>
 
@@ -150,9 +157,9 @@ const ResumeUpload = () => {
         {!file ? (
           <div
             className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200 ${
-              dragActive 
-                ? 'border-blue-400 bg-blue-50' 
-                : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+              dragActive
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -165,12 +172,12 @@ const ResumeUpload = () => {
               onChange={handleFileInput}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            
+
             <div className="space-y-6">
               <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full inline-block">
                 <Upload className="h-12 w-12 text-white" />
               </div>
-              
+
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   Drop your resume here
@@ -221,7 +228,7 @@ const ResumeUpload = () => {
                   </>
                 )}
               </button>
-              
+
               <button
                 onClick={() => setFile(null)}
                 className="px-8 py-3 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-300 hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
@@ -233,14 +240,18 @@ const ResumeUpload = () => {
         )}
 
         <div className="mt-8 pt-8 border-t border-gray-200">
-          <h4 className="font-semibold text-gray-900 mb-4">What happens next?</h4>
+          <h4 className="font-semibold text-gray-900 mb-4">
+            What happens next?
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="p-3 bg-blue-100 rounded-lg inline-block mb-3">
                 <Upload className="h-6 w-6 text-blue-600" />
               </div>
               <h5 className="font-medium text-gray-900">1. Upload</h5>
-              <p className="text-sm text-gray-600">Securely upload your resume</p>
+              <p className="text-sm text-gray-600">
+                Securely upload your resume
+              </p>
             </div>
             <div className="text-center">
               <div className="p-3 bg-purple-100 rounded-lg inline-block mb-3">
@@ -254,7 +265,9 @@ const ResumeUpload = () => {
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <h5 className="font-medium text-gray-900">3. Improve</h5>
-              <p className="text-sm text-gray-600">Get personalized suggestions</p>
+              <p className="text-sm text-gray-600">
+                Get personalized suggestions
+              </p>
             </div>
           </div>
         </div>

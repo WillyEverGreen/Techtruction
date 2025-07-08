@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Simulate checking for existing session
-    const savedUser = localStorage.getItem('jobfinder_user');
+    const savedUser = localStorage.getItem("jobfinder_user");
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -25,28 +25,27 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // For demo, just use a static city or fetch from backend if available
     const userData = {
       id: Date.now(),
       email,
-      name: email.split('@')[0],
+      name: email.split("@")[0],
       avatar: `https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop`,
       joinDate: new Date().toISOString(),
       resumeUploaded: false,
       skillsAnalyzed: false,
-      jobsMatched: 0
+      jobsMatched: 0,
+      city: "New York", // TODO: Replace with real city from backend
     };
-    
     setUser(userData);
-    localStorage.setItem('jobfinder_user', JSON.stringify(userData));
+    localStorage.setItem("jobfinder_user", JSON.stringify(userData));
     return userData;
   };
 
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, gender, city) => {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const userData = {
       id: Date.now(),
       email,
@@ -55,23 +54,24 @@ export const AuthProvider = ({ children }) => {
       joinDate: new Date().toISOString(),
       resumeUploaded: false,
       skillsAnalyzed: false,
-      jobsMatched: 0
+      jobsMatched: 0,
+      gender,
+      city,
     };
-    
     setUser(userData);
-    localStorage.setItem('jobfinder_user', JSON.stringify(userData));
+    localStorage.setItem("jobfinder_user", JSON.stringify(userData));
     return userData;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('jobfinder_user');
+    localStorage.removeItem("jobfinder_user");
   };
 
   const updateUser = (updates) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
-    localStorage.setItem('jobfinder_user', JSON.stringify(updatedUser));
+    localStorage.setItem("jobfinder_user", JSON.stringify(updatedUser));
   };
 
   const value = {
@@ -80,12 +80,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
-    loading
+    loading,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
